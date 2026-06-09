@@ -17,7 +17,13 @@ class hashCandidate:
 PREFIX_RULES : list[tuple[str, str, str]] = [
     ("$argon2id$", "Argon2id", "modern phc string"),
     ("$argon2i$", "Argon2i", "phc string"),
+    ("$sha1$", "SHA-1", "standard sha-1 password layout"),
+    ("$md,", "MD5", "solaris md5 crypt")
 ]
+
+
+
+
 
 HEX_CHARSET: frozenset[str] = frozenset("0123456789abcdefABCDEF")
 _HEX_UPPER_CHARSET: frozenset[str] = frozenset("0123456789ABCDEF")
@@ -27,7 +33,10 @@ HEX_LENGTH_RULES: dict[int, list[str]] = {
     32: ["MD5", "NTLM", "MD4", "RIPEMD-128"],
     40: ["SHA-1", "RIPEMD-160"],
     
+    
 }
+
+
 
 
 
@@ -69,7 +78,7 @@ def identify(raw_input: str) -> list[hashCandidate]:
     text = raw_input.strip()
     
     if not text:
-        return []
+        return [""]
     
     
     for prefix, algorithm, note in PREFIX_RULES:
@@ -107,7 +116,7 @@ def identify(raw_input: str) -> list[hashCandidate]:
             candidates.append(
                 hashCandidate(algorithm=algorithm, confidence=confidence, reason=f"{len(text)} hex chars - {label}")
             )
-            return candidates   
+        return candidates   
     
     
     if text.startswith("$"):
@@ -147,6 +156,8 @@ def _build_argument_parse() -> argparse.ArgumentParser:
             default = 5,
             help = "Show at most this many candidates (default: 5).",
         )
+        
+        
         return parser
 
     
@@ -184,12 +195,18 @@ def main() -> int:
     parser = _build_argument_parse()
     args = parser.parse_args()
     console = Console()
+
+    if args.hash.strip() == "":
+        console.print("[bold red]Put something in the quotes nigguh")
+        return 1
+
     
     candidates = identify(args.hash)
     
     if not candidates:
         console.print("[red] No identification possible.[/red]")
         return 1
+    
     
     trimmed = candidates[:args.top]
     _render_table(args.hash, trimmed, console)
